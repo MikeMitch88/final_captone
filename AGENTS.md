@@ -76,14 +76,18 @@ app.py ────────────────────> Streamlit e
 
 ## AI Intelligence Layer (`src/ai_assistant.py`)
 
-- LangChain + `langchain-groq` (`ChatGroq`, model `llama-3.3-70b-versatile`).
+- LangChain + `langchain-groq` (`ChatGroq`). Retired model IDs hard-fail on the
+  live API, so the assistant walks `GROQ_MODEL_CANDIDATES`
+  (`llama-3.1-8b-instant` → `openai/gpt-oss-20b` → `openai/gpt-oss-120b` →
+  `qwen/qwen3-32b`) and degrades to offline on the first successful model.
+- **Offline fallback:** if `GROQ_API_KEY` unset, package missing, or every model
+  candidate errors (404/401/429/timeout), `InvestigationAssistant` transparently
+  uses deterministic rule-based generation so the demo never breaks and the
+  session is pinned to `offline-rules`. Check `.mode` ("groq" vs "offline-rules").
 - Guardrails are enforced in the system prompt AND scrubbed in code
   (`_apply_guardrail_language`): "high-risk anomaly detected" — NEVER "fraud";
   reason only from provided `<event_context>`; outputs are always framed as
   "recommendations for human review".
-- **Offline fallback:** if `GROQ_API_KEY` unset or package missing, the
-  `InvestigationAssistant` transparently uses deterministic rule-based
-  generation so the demo never breaks. Check `.mode` ("groq" vs "offline-rules").
 - LLM question parsing tolerates numbered lists: `Q1: …`, `1. …`, leading
   whitespace; else falls back to `_split_questions`.
 

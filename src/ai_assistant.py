@@ -15,9 +15,10 @@ Guardrails (enforced in the system prompt AND defensively in code):
   * The assistant may only reason from the provided operational context.
   * All findings are framed as "recommendations for human review".
 
-The module degrades gracefully: when no ``GROQ_API_KEY`` is configured (or the
-``langchain-groq`` package is unavailable) it returns deterministic, evidence
-grounded results so the stakeholder showcase works fully offline.
+The module degrades gracefully: when no ``GROQ_API_KEY`` is configured, the
+``langchain-groq`` package is unavailable, or Groq itself refuses the request
+(retired model, invalid key, rate limit, timeout) it returns deterministic,
+evidence-grounded results so the stakeholder showcase works fully offline.
 """
 
 from __future__ import annotations
@@ -109,7 +110,18 @@ def _event_context_summary(event: Mapping[str, Any]) -> str:
 # LangChain chains
 # ---------------------------------------------------------------------------
 
-def _build_llm() -> Any:
+# Ordered candidates: chosen live from the GroqCloud catalog. `llama-3.3-70b-versatile`
+# was retired from the production lineup, so we prefer current chat models and fall
+# forward through the list — and finally degrade to offline-rules on any API error.
+GROQ_MODEL_CANDIDATES = (
+    "llama-3.1-8b-instant",
+    "openai/gpt-oss-20b",
+    "openai/gpt-oss-120b",
+    "qwen/qwen3-32b",
+)
+
+
+def _build_llm(model: str | None = None) -> Any:
     """Construct the Groq-backed chat model.
 
     Raises RuntimeError when the package or the API key is unavailable so the
@@ -122,7 +134,9 @@ def _build_llm() -> Any:
         from langchain_groq import ChatGroq
     except ImportError as exc:  # pragma: no cover - environment dependent
         raise RuntimeError("langchain-groq is not installed") from exc
-    return ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2, api_key=api_key)
+    return ChatGroq(
+        model=model or GROQ_MODEL_CANDIDATES[0], temperature=0.2, api_key=api_key
+    )
 
 
 SUMMARY_PROMPT = ChatPromptTemplate.from_messages(
@@ -155,6 +169,10 @@ INVESTIGATION_PROMPT = ChatPromptTemplate.from_messages(
 )
 
 
+class _LiveUnavailable(Exception):
+    """Raised when no Groq model candidate can be invoked this session."""
+
+
 class InvestigationAssistant:
     """Orchestrates the AI Intelligence Layer with a deterministic fallback."""
 
@@ -165,6 +183,7 @@ class InvestigationAssistant:
     ) -> None:
         self._llm_factory = llm_factory or _build_llm
         self._llm: Any | None = None
+        self._last_error: Exception | None = None
         # Auto-detect: use the LLM only when the factory can succeed.
         if use_llm is None:
             use_llm = self._can_use_llm()
@@ -187,8 +206,10 @@ class InvestigationAssistant:
         """Return a 2-sentence plain-language summary of why an event is high-risk."""
         context = _event_context_summary(event)
         if self.use_llm:
-            chain = SUMMARY_PROMPT | self._llm | StrOutputParser()
-            text = chain.invoke({"event_context": context})
+            try:
+                text = self._run_live(self._summary_chain, context)
+            except _LiveUnavailable:
+                text = self._offline_summary(event)
         else:
             text = self._offline_summary(event)
         return _apply_guardrail_language(text).strip()
@@ -197,8 +218,10 @@ class InvestigationAssistant:
         """Return 3 evidence-grounded investigation questions."""
         context = _event_context_summary(event)
         if self.use_llm:
-            chain = INVESTIGATION_PROMPT | self._llm | StrOutputParser()
-            text = chain.invoke({"event_context": context})
+            try:
+                text = self._run_live(self._investigation_chain, context)
+            except _LiveUnavailable:
+                return self._offline_investigation_prompts(event)
             raw_questions = re.findall(
                 r"^\s*(?:[0-9]+|[Qq]\s*[0-9]*)\s*[:.)]\s*(.+)$",
                 text.strip(),
@@ -209,6 +232,41 @@ class InvestigationAssistant:
                 return questions
             return self._split_questions(text)
         return self._offline_investigation_prompts(event)
+
+    # -- Live LLM execution with graceful degradation ----------------------
+    @staticmethod
+    def _summary_chain(model: Any) -> Any:
+        return SUMMARY_PROMPT | model | StrOutputParser()
+
+    @staticmethod
+    def _investigation_chain(model: Any) -> Any:
+        return INVESTIGATION_PROMPT | model | StrOutputParser()
+
+    def _run_live(self, chain_factory: Callable[[Any], Any], context: str) -> str:
+        """Invoke the LLM, walking the candidate models; degrade to offline on error.
+
+        Any failure (retired model, inaccessible model, invalid key, rate limit,
+        timeout) disables the live path for the remainder of the session so the
+        demo keeps serving deterministic results instead of crashing.
+        """
+        last_error: Exception | None = None
+        for model_name in GROQ_MODEL_CANDIDATES:
+            try:
+                model = self._model_factory(model_name)
+                chain = chain_factory(model)
+                return chain.invoke({"event_context": context})
+            except Exception as exc:  # noqa: BLE001 - deliberate wide net
+                last_error = exc
+        self.use_llm = False
+        self._last_error = last_error
+        raise _LiveUnavailable() from last_error
+
+    def _model_factory(self, model_name: str) -> Any:
+        """Resolve the LLM for a candidate model, honouring injected factories."""
+        try:
+            return self._llm_factory(model=model_name)
+        except TypeError:
+            return self._llm_factory()
 
     # -- Deterministic fallback (offline / no key) --------------------------
     @staticmethod
