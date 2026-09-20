@@ -268,7 +268,7 @@ def page_overview(events: pd.DataFrame) -> None:
         st.dataframe(
             style_risk_table(drivers.rename(columns={"risk_flag": "Severity"}), "Severity"),
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
         )
 
     st.subheader("Exception Queue (Priority)")
@@ -295,7 +295,7 @@ def page_overview(events: pd.DataFrame) -> None:
     st.dataframe(
         style_risk_table(queue, "Severity"),
         hide_index=True,
-        use_container_width=True,
+        width="stretch",
     )
 
 
@@ -319,7 +319,7 @@ def risk_drivers(events: pd.DataFrame) -> pd.DataFrame:
             "risk_flag": "HIGH" if mask.sum() else "LOW",
         })
     if "e_seal_tamper_flag" in events:
-        mask = events["e_seal_tamper_flag"].fillna(0).astype(int).eq(1)
+        mask = pd.to_numeric(events["e_seal_tamper_flag"], errors="coerce").fillna(0).astype("Int64").eq(1)
         rows.append({
             "Risk Driver": "eSeal tamper flags",
             "Number of Cases": int(mask.sum()),
@@ -335,7 +335,7 @@ def risk_drivers(events: pd.DataFrame) -> pd.DataFrame:
             "risk_flag": "HIGH" if mask.sum() else "LOW",
         })
     if "pass_quality_flag" in events:
-        mask = events["pass_quality_flag"].fillna(1).astype(int).eq(0)
+        mask = pd.to_numeric(events["pass_quality_flag"], errors="coerce").fillna(1).astype("Int64").eq(0)
         rows.append({
             "Risk Driver": "Failed laboratory quality",
             "Number of Cases": int(mask.sum()),
@@ -385,7 +385,7 @@ def page_consignments(events: pd.DataFrame) -> None:
     st.dataframe(
         style_risk_table(view, "Severity"),
         hide_index=True,
-        use_container_width=True,
+        width="stretch",
     )
 
 
@@ -397,8 +397,8 @@ def page_quality(events: pd.DataFrame) -> None:
         return
 
     tested = int(q["density_at_15c"].notna().sum())
-    passed = int((q["pass_quality_flag"].fillna(1).astype(int).eq(1)).sum())
-    failed = int((q["pass_quality_flag"].fillna(1).astype(int).eq(0)).sum())
+    passed = int(pd.to_numeric(q["pass_quality_flag"], errors="coerce").fillna(1).astype("Int64").eq(1).sum())
+    failed = int(pd.to_numeric(q["pass_quality_flag"], errors="coerce").fillna(1).astype("Int64").eq(0).sum())
     avg_density = float(q["density_at_15c"].fillna(0).mean())
 
     c1, c2, c3, c4 = st.columns(4)
@@ -425,7 +425,7 @@ def page_quality(events: pd.DataFrame) -> None:
         "sulfur_content_ppm": "Sulfur (ppm)",
         "pass_quality_flag": "Pass Flag",
     })
-    st.dataframe(qview, hide_index=True, use_container_width=True)
+    st.dataframe(qview, hide_index=True, width="stretch")
 
 
 def page_custody_chain() -> None:

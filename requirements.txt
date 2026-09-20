@@ -1,0 +1,8 @@
+streamlit==1.64.0
+pandas
+numpy
+faker
+pyarrow
+xgboost
+langchain
+langchain-groq

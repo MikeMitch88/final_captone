@@ -23,6 +23,19 @@ Run the generator + pipeline first to build `data/custody_*.db`; the app
 auto-loads the reconciled dataset and falls back to synthetic demo data if the
 DBs are missing.
 
+## Deployment (Streamlit Community Cloud)
+
+- **`requirements.txt` at repo root is REQUIRED** — the cloud runner installs
+  ONLY packages declared there. Without it the app crashes at import with
+  `ModuleNotFoundError: No module named 'langchain_core'`.
+- `streamlit` is pinned to `==1.64.0` in `requirements.txt`; keep local and
+  deployed versions in sync. Use `width="stretch"` (NOT `use_container_width`,
+  which is removed after 2025-12-31 and logs deprecation warnings on 1.64).
+- `data/custody_*.db` are committed in this repo, so the hosted app loads the
+  real reconciled dataset via `load_events()`. If you ever want to hide them,
+  add `data/` to `.gitignore` and `git rm -r --cached data/` — the app then
+  transparently falls back to the synthetic demo dataset (120 rows).
+
 ## Architecture (data flow)
 
 ```text
