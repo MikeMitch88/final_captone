@@ -1,0 +1,241 @@
+/* =====================================================================
+   HAKIKI-KPC Integrity Intelligence — Enterprise Theme (blue/white)
+   ---------------------------------------------------------------------
+   Purpose: override Streamlit defaults to deliver a strict "blue/white
+   enterprise" look, severity-coded indicators, and restrained indigo
+   accents reserved exclusively for AI-driven insights.
+   ===================================================================== */
+
+/* --- 1. Base: enforce light enterprise background ------------------- */
+:root {
+  --kpc-white: #ffffff;
+  --kpc-bg: #f4f6fb;            /* app background: light grey   */
+  --kpc-navy: #0b3a6f;          /* deep corporate blue          */
+  --kpc-navy-2: #123f7e;
+  --kpc-blue: #1d5fb0;
+  --kpc-border: #dfe4ee;
+  --kpc-text: #1c2433;
+  --kpc-text-muted: #5b6b84;
+
+  /* severity indicators (strict, consistent) */
+  --sev-critical: #d92d20;      /* red    -> Critical / Fail */
+  --sev-high: #f79009;          /* orange -> High / Warning   */
+  --sev-low: #12b76a;           /* green  -> Low / Pass      */
+
+  /* AI accents: restrained indigo, AI-only */
+  --ai-purple: #6941c6;
+  --ai-purple-soft: #efeafc;
+}
+
+html, body, .stApp {
+  background-color: var(--kpc-bg);
+  color: var(--kpc-text);
+  font-family: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* --- 2. Kill default streaming chrome ------------------------------- */
+#MainMenu,
+footer,
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+[data-testid="stStatusWidget"] {
+  visibility: hidden;
+  height: 0;
+}
+
+[data-testid="stHeader"] {
+  background: transparent;
+  height: 0;
+}
+
+.block-container {
+  padding-top: 1.2rem;
+  padding-bottom: 3rem;
+  max-width: 1400px;
+}
+
+/* --- 3. Enterprise top navigation band ------------------------------ */
+.kpc-topbar {
+  background: linear-gradient(135deg, var(--kpc-navy) 0%, var(--kpc-navy-2) 100%);
+  border-radius: 12px;
+  padding: 1rem 1.4rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--kpc-white);
+}
+.kpc-topbar .kpc-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+.kpc-topbar .kpc-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+/* --- 4. Elevated KPI metric cards ----------------------------------- */
+.kpc-kpi {
+  background: var(--kpc-white);
+  border: 1px solid var(--kpc-border);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  box-shadow: 0 4px 14px rgba(16, 32, 64, 0.06);
+  border-top: 4px solid var(--kpc-blue);
+}
+.kpc-kpi .kpi-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--kpc-text-muted);
+}
+.kpc-kpi .kpi-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--kpc-navy);
+  margin-top: 0.2rem;
+  line-height: 1.15;
+}
+.kpc-kpi .kpi-delta {
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-top: 0.2rem;
+}
+.kpc-kpi.kpi-critical { border-top-color: var(--sev-critical); }
+.kpc-kpi.kpi-high { border-top-color: var(--sev-high); }
+.kpc-kpi.kpi-pass { border-top-color: var(--sev-low); }
+.kpc-kpi.kpi-ai { border-top-color: var(--ai-purple); }
+
+/* --- 5. AI insight panel (indigo accent — AI only) ------------------ */
+.kpc-ai-panel {
+  background: var(--ai-purple-soft);
+  border: 1px solid #d7cbf5;
+  border-left: 5px solid var(--ai-purple);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  color: #3d2b7a;
+}
+.kpc-ai-panel .ai-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--ai-purple);
+}
+.kpc-ai-panel h4 {
+  margin: 0.2rem 0 0.45rem;
+  color: #3a2382;
+}
+
+/* --- 6. Severity chips ---------------------------------------------- */
+.kpc-chip {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.chip-critical {
+  background: #fee4e2;
+  color: var(--sev-critical);
+  border: 1px solid #fda29b;
+}
+.chip-high {
+  background: #fef0c7;
+  color: #b54708;
+  border: 1px solid #fedf89;
+}
+.chip-low {
+  background: #d1fadf;
+  color: #067647;
+  border: 1px solid #6ce9a6;
+}
+
+/* --- 7. Headings & captions ----------------------------------------- */
+h1, h2, h3 {
+  color: var(--kpc-navy);
+  letter-spacing: -0.2px;
+}
+.stMarkdown p {
+  color: var(--kpc-text-muted);
+}
+
+/* --- 8. Sidebar ------------------------------------------------------ */
+[data-testid="stSidebar"] {
+  background: var(--kpc-white);
+  border-right: 1px solid var(--kpc-border);
+}
+[data-testid="stSidebar"] h2 {
+  color: var(--kpc-navy);
+}
+
+/* --- 9. Widgets: consistent enterprise controls ---------------------- */
+.stButton > button {
+  border-radius: 8px;
+  font-weight: 600;
+  border: 1px solid var(--kpc-border);
+}
+.stButton > button[kind="primary"] {
+  background: var(--kpc-navy);
+  border-color: var(--kpc-navy);
+  color: var(--kpc-white);
+}
+div[data-baseweb="select"] > div {
+  border-radius: 8px;
+  border-color: var(--kpc-border);
+}
+
+/* --- 10. Dataframes: softer, cleaner tables ------------------------- */
+[data-testid="stDataFrame"] {
+  border: 1px solid var(--kpc-border);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 3px 10px rgba(16, 32, 64, 0.04);
+}
+[data-testid="stDataFrame"] thead th {
+  background: #eef2f9 !important;
+  color: var(--kpc-navy) !important;
+  font-weight: 700 !important;
+}
+
+/* --- 11. Tabs -------------------------------------------------------- */
+.stTabs [data-baseweb="tab-list"] {
+  gap: 0.4rem;
+  border-bottom: 1px solid var(--kpc-border);
+}
+.stTabs [data-baseweb="tab"] {
+  border-radius: 8px 8px 0 0;
+  font-weight: 600;
+  color: var(--kpc-text-muted);
+}
+.stTabs [aria-selected="true"] {
+  background: var(--kpc-navy) !important;
+  color: var(--kpc-white) !important;
+}
+
+/* --- 12. Metrics fallback (native st.metric accent) ------------------ */
+[data-testid="stMetric"] {
+  background: var(--kpc-white);
+  border: 1px solid var(--kpc-border);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  box-shadow: 0 4px 14px rgba(16, 32, 64, 0.06);
+}
+[data-testid="stMetricValue"] {
+  color: var(--kpc-navy);
+}
+
+/* --- 13. Danger / info / warning banners ----------------------------- */
+.stAlert {
+  border-radius: 10px;
+}
